@@ -8,6 +8,12 @@
     },
     {
       "path": "./apps/raptorts"
+    },
+    {
+      "path": "./packages/container-di"
+    },
+    {
+      "path": "./packages/monads"
     }
   ]
 }
