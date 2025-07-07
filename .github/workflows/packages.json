@@ -1,0 +1,4 @@
+{
+    "container-di": "{\"name\":\"container-di\",\"path\":\"dist/packages/container-di\"}",
+    "monads": "{\"name\":\"monads\",\"path\":\"dist/packages/monads\"}"
+}

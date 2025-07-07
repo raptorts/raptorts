@@ -1,0 +1,47 @@
+---
+name: release packages workflow
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  extract-package-infos:
+    name: Extract the package info from packages.json
+    runs-on: ubuntu-latest
+    outputs:
+      package-info: ${{ steps.information.outputs.value }}
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Extract the package key from the tag
+        id: extract-key
+        run: |
+          tag_name=$(echo "${{ github.event.release.tag_name }}" | sed 's/-v[0-9]\+\.[0-9]\+\.[0-9]\+//')
+          echo "package-key=$tag_name" >> $GITHUB_OUTPUT
+
+      - name: Extract package info from package.json
+        uses: sergeysova/jq-action@v2
+        id: information
+        with:
+          cmd: jq '.["'"${{ steps.extract-key.outputs.package-key }}"'"]' ./.github/workflows/packages.json -r
+
+  build-and-publish:
+    name: Build and publish
+    permissions:
+      contents: read
+      id-token: write
+    needs: [extract-package-infos]
+    uses: ./.github/workflows/build-and-publish.yaml
+    with:
+      package: ${{ fromJson(needs.extract-package-infos.outputs.package-info).name }}
+      dist-path: ${{ fromJson(needs.extract-package-infos.outputs.package-info).path }}
+      branch: ${{ github.event.release.tag_name }}
+      run-number: ${{ github.run_number }}
+    secrets:
+      gh-token: ${{ secrets.GITHUB_TOKEN }}
+      npm-token: ${{ secrets.NPM_TOKEN }}

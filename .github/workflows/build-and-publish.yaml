@@ -1,0 +1,56 @@
+---
+name: Reusable build and publish Workflow
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+      dist-path:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      run-number:
+        required: true
+        type: string
+    secrets:
+      gh-token:
+        required: true
+      npm-token:
+        required: true
+
+jobs:
+  build-package:
+    name: build of ${{ inputs.project }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.branch }}
+
+      - name: Build package
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Run install dep
+        run: npm install
+
+      - name: Run build package
+        run: npx nx run ${{ inputs.package }}:build
+
+      - name: Run publish package
+        run: |
+          cd ${{ inputs.dist-path }}
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
